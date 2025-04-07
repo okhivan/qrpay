@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Генерация QR-кода для оплаты по банковским реквизитам</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <style>
+        body {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+        }
+
+        input[type="text"] {
+            width: 89%;
+            max-width: 600px;
+            padding: 10px;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: row;
+            gap: 40px;
+            align-items: flex-start;
+            justify-content: flex-start;
+            flex-wrap: nowrap;
+        }
+
+        #form-block {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        #qrcode-block {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            order: 2;
+        }
+
+        #qrcode-block canvas {
+            width: 90% !important;
+            height: auto !important;
+            max-width: 400px;
+        }
+
+        #data-string {
+            display: none;
+        }
+
+        #saved-list {
+            margin-top: 40px;
+        }
+
+        .saved-item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+        }
+
+        .saved-item button {
+            margin-right: 10px;
+        }
+
+        .info-box {
+            background: #eef5ff;
+            border: 1px solid #99c;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+
+        .required:after {
+            content: " *";
+            color: red;
+        }
+
+        @media (min-width: 320px) and (max-width: 480px) {
+
+            body {
+                font-size: 16px;
+            }
+
+            input[type="text"],
+            label {
+                font-size: 16px;
+            }
+
+            #container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Генерация QR-кода для оплаты по банковским реквизитам</h1>
+    <p>QR-код предназначен для сканирования через банковские приложения.</p>
+
+    <div class="info-box">
+        <strong>Что происходит на этой странице:</strong>
+        <ul>
+            <li>Вы заполняете форму с банковскими реквизитами и суммой — эти данные автоматически превращаются в
+                специальную строку, по которой формируется QR-код.</li>
+            <li>QR-код можно отсканировать в любом банковском приложении (например, Сбербанк, Тинькофф, ВТБ и др.),
+                чтобы сразу подставились реквизиты для оплаты.</li>
+            <li>Если вы нажмёте кнопку «Сохранить результат», введённые данные сохранятся у вас в браузере. Это значит,
+                что когда вы вернётесь на эту страницу — ваши сохранённые записи будут отображены ниже, и вы сможете
+                быстро сгенерировать QR-код повторно.</li>
+            <li>Ничего не отправляется на сервер — все данные хранятся только в вашем браузере.</li>
+        </ul>
+    </div>
+
+    <div id="container">
+        <div id="form-block">
+            <form id="qrForm">
+                <label class="required">Наименование получателя платежа:<br>
+                    <input type="text" name="Name" placeholder="Наименование получателя платежа" required
+                        oninput="generateQRCode()">
+                </label>
+
+                <label>ИНН получателя:<br>
+                    <input type="text" name="PayeeINN" placeholder="ИНН получателя" oninput="generateQRCode()">
+                </label>
+
+                <label>КПП:<br>
+                    <input type="text" name="KPP" placeholder="КПП" oninput="generateQRCode()">
+                </label>
+
+                <label class="required">Номер расчетного счета получателя платежа:<br>
+                    <input type="text" name="PersonalAcc" placeholder="Номер расчетного счета получателя платежа"
+                        required oninput="generateQRCode()">
+                </label>
+
+                <label class="required">Наименование банка получателя платежа:<br>
+                    <input type="text" name="BankName" placeholder="Наименование банка получателя платежа" required
+                        oninput="generateQRCode()">
+                </label>
+
+                <label class="required">БИК:<br>
+                    <input type="text" name="BIC" placeholder="БИК" required oninput="generateQRCode()">
+                </label>
+
+                <label class="required">Номер кор./сч. банка получателя платежа:<br>
+                    <input type="text" name="CorrespAcc" placeholder="Номер кор./сч. банка получателя платежа" required
+                        oninput="generateQRCode()">
+                </label>
+
+                <label>Назначение платежа:<br>
+                    <input type="text" name="Purpose" placeholder="Назначение платежа" oninput="generateQRCode()">
+                </label>
+
+                <label>Сумма платежа (в рублях без копеек):<br>
+                    <input type="text" name="Sum" placeholder="Сумма платежа (в рублях без копеек)"
+                        oninput="generateQRCode()">
+                </label>
+
+                <label>Название/тег для сохранения qr кода:<br>
+                    <input type="text" id="saveLabel" placeholder="Например, Оплата за март">
+                </label>
+
+                <button type="button" onclick="saveResult()">Сохранить результат</button>
+                <p><em>Поля, помеченные * — обязательны для заполнения</em></p>
+            </form>
+        </div>
+
+        <div id="qrcode-block">
+            <h3>QR-код:</h3>
+            <div id="qrcode"></div>
+        </div>
+    </div>
+
+    <div id="data-string"></div>
+
+    <div id="saved-list">
+        <h3>Сохранённые результаты:</h3>
+        <div id="savedItems"></div>
+    </div>
+
+    <script>
+        function generateQRCode () {
+            const form = document.getElementById('qrForm');
+            const formData = new FormData(form);
+            let data = "ST00012";
+            for (let [key, value] of formData.entries()) {
+                if (value.trim()) {
+                    if (key === "Sum") {
+                        const sumWithZeroes = value.replace(/\\D/g, '') + "00";
+                        data += `|${key}=${sumWithZeroes}`;
+                    } else {
+                        data += `|${key}=${value}`;
+                    }
+                }
+            }
+            document.getElementById('data-string').textContent = data;
+            document.getElementById('qrcode').innerHTML = "";
+            QRCode.toCanvas(document.createElement('canvas'), data, function (error, canvas) {
+                if (error) console.error(error);
+                document.getElementById('qrcode').appendChild(canvas);
+            });
+        }
+
+        function saveResult () {
+            const form = document.getElementById('qrForm');
+            const formData = new FormData(form);
+            const label = document.getElementById('saveLabel').value.trim();
+            if (!label) return;
+            const values = {};
+            formData.forEach((value, key) => {
+                values[key] = value;
+            });
+            const saved = JSON.parse(localStorage.getItem('savedQRs') || '[]');
+            saved.push({ label, values });
+            localStorage.setItem('savedQRs', JSON.stringify(saved));
+            document.getElementById('saveLabel').value = "";
+            loadSavedResults();
+        }
+
+        function loadSavedResults () {
+            const saved = JSON.parse(localStorage.getItem('savedQRs') || '[]');
+            const container = document.getElementById('savedItems');
+            container.innerHTML = "";
+            saved.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'saved-item';
+                const values = Object.entries(item.values)
+                    .filter(([key, val]) => val.trim() !== '')
+                    .map(([key, val]) => val)
+                    .join(', ');
+                div.innerHTML = `<strong>${item.label}</strong><br>${values}<br>
+                <button onclick="loadToForm(${index})">Сгенерировать QR-код</button>
+                <button onclick="deleteSaved(${index})">Удалить</button>`;
+                container.appendChild(div);
+            });
+        }
+
+        function loadToForm (index) {
+            const saved = JSON.parse(localStorage.getItem('savedQRs') || '[]');
+            const item = saved[index];
+            if (!item) return;
+            const form = document.getElementById('qrForm');
+            for (let key in item.values) {
+                if (form.elements[key]) {
+                    form.elements[key].value = item.values[key];
+                }
+            }
+            generateQRCode();
+        }
+
+        function deleteSaved (index) {
+            const saved = JSON.parse(localStorage.getItem('savedQRs') || '[]');
+            saved.splice(index, 1);
+            localStorage.setItem('savedQRs', JSON.stringify(saved));
+            loadSavedResults();
+        }
+
+        window.onload = function () {
+            generateQRCode();
+            loadSavedResults();
+        };
+    </script>
+</body>
+
+</html>
