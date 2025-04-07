@@ -42,14 +42,6 @@
 1. Склонируйте репозиторий или загрузите файлы проекта.
 2. Откройте файл `index.html` в любом современном браузере.
 
-## Скриншоты
-
-### Десктопная версия
-![Desktop Screenshot](https://via.placeholder.com/800x400?text=Desktop+Version)
-
-### Мобильная версия
-![Mobile Screenshot](https://via.placeholder.com/400x800?text=Mobile+Version)
-
 ## Лицензия
 
 Этот проект распространяется под лицензией MIT. Подробнее см. [LICENSE](LICENSE).
