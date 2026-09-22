@@ -4,24 +4,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Бесплатный генератор QR-кода для оплаты по банковским реквизитам. Работает полностью в браузере, без отправки данных на сервер. Печать и скачивание счёта в PDF.">
+    <meta name="theme-color" content="#2451b8">
+    <meta property="og:title" content="Генератор QR-кода для оплаты по реквизитам">
+    <meta property="og:description" content="Сформируйте QR-код для оплаты и счёт на оплату с подписью и печатью — без регистрации, все данные остаются в вашем браузере.">
+    <meta property="og:type" content="website">
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
 
     <title>Генерация QR-кода для оплаты по банковским реквизитам</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <style>
+        :root {
+            --bg: #ffffff;
+            --fg: #1a1a1a;
+            --muted: #555;
+            --card-bg: #f9f9f9;
+            --card-border: #ccc;
+            --info-bg: #eef5ff;
+            --info-border: #99c;
+            --accent: #2451b8;
+            --accent-fg: #ffffff;
+            --input-border: #bbb;
+            --input-bg: #ffffff;
+            --error: #c0392b;
+            --warn: #b8860b;
+            --warn-bg: #fff8e6;
+        }
+
+        :root[data-theme="dark"] {
+            --bg: #14171c;
+            --fg: #e8e8e8;
+            --muted: #a0a0a0;
+            --card-bg: #1e2229;
+            --card-border: #3a3f47;
+            --info-bg: #16233b;
+            --info-border: #2f4d7a;
+            --accent: #5b8def;
+            --accent-fg: #0c1116;
+            --input-border: #4a4f58;
+            --input-bg: #1b1f26;
+            --error: #ff6b5b;
+            --warn: #e0b341;
+            --warn-bg: #2a2517;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             font-family: Arial, sans-serif;
             font-size: 16px;
+            background: var(--bg);
+            color: var(--fg);
         }
 
-        input[type="text"] {
+        h1, h3 {
+            color: var(--fg);
+        }
+
+        #page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        #theme-toggle {
+            white-space: nowrap;
+        }
+
+        input[type="text"],
+        input[type="number"] {
             width: 89%;
             max-width: 600px;
             padding: 10px;
             font-size: 18px;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
+            background: var(--input-bg);
+            color: var(--fg);
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+        }
+
+        input.invalid {
+            border-color: var(--error);
+            outline-color: var(--error);
+        }
+
+        input.warn {
+            border-color: var(--warn);
+            outline-color: var(--warn);
+        }
+
+        .field-msg {
+            display: block;
+            font-size: 13px;
+            margin: -4px 0 10px;
+        }
+
+        .field-msg.error {
+            color: var(--error);
+        }
+
+        .field-msg.warn {
+            color: var(--warn);
         }
 
         label {
@@ -49,12 +144,17 @@
             max-width: 400px;
             text-align: center;
             order: 2;
+            position: sticky;
+            top: 20px;
         }
 
         #qrcode-block canvas {
             width: 90% !important;
             height: auto !important;
             max-width: 400px;
+            background: #fff;
+            padding: 6px;
+            border-radius: 6px;
         }
 
         #data-string {
@@ -66,27 +166,136 @@
         }
 
         .saved-item {
-            border: 1px solid #ccc;
+            border: 1px solid var(--card-border);
             padding: 10px;
             margin-bottom: 10px;
-            background: #f9f9f9;
+            background: var(--card-bg);
+            border-radius: 4px;
         }
 
         .saved-item button {
             margin-right: 10px;
+            margin-top: 6px;
         }
 
         .info-box {
-            background: #eef5ff;
-            border: 1px solid #99c;
+            background: var(--info-bg);
+            border: 1px solid var(--info-border);
             padding: 15px;
             margin-bottom: 20px;
             border-radius: 6px;
         }
 
-        .required:after {
-            content: " *";
-            color: red;
+        .req-mark {
+            color: var(--error);
+        }
+
+        fieldset {
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            margin: 0 0 24px;
+            padding: 16px;
+        }
+
+        fieldset legend {
+            padding: 0 8px;
+            font-weight: bold;
+        }
+
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 16px 0;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 10px 14px;
+            font-size: 15px;
+            border-radius: 5px;
+            border: 1px solid var(--input-border);
+            background: var(--card-bg);
+            color: var(--fg);
+        }
+
+        button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-fg);
+        }
+
+        button.danger {
+            border-color: var(--error);
+            color: var(--error);
+            background: transparent;
+        }
+
+        button:hover {
+            filter: brightness(0.95);
+        }
+
+        .items-table {
+            width: 100%;
+            max-width: 700px;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        .items-table th, .items-table td {
+            border: 1px solid var(--card-border);
+            padding: 6px;
+            text-align: left;
+        }
+
+        .items-table input {
+            width: 100%;
+            max-width: none;
+            margin-bottom: 0;
+            padding: 6px;
+            font-size: 15px;
+        }
+
+        .items-table .col-qty, .items-table .col-price, .items-table .col-sum {
+            width: 90px;
+        }
+
+        .items-table .col-del {
+            width: 36px;
+            text-align: center;
+        }
+
+        #itemsTotalRow {
+            font-weight: bold;
+        }
+
+        .sig-stamp-grid {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .sig-stamp-box {
+            flex: 1 1 220px;
+        }
+
+        .sig-stamp-preview {
+            display: block;
+            max-width: 220px;
+            max-height: 110px;
+            margin: 8px 0;
+            border: 1px dashed var(--card-border);
+            padding: 6px;
+            background: #fff;
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        #invoiceDoc {
+            display: none;
         }
 
         @media (min-width: 320px) and (max-width: 480px) {
@@ -96,6 +305,7 @@
             }
 
             input[type="text"],
+            input[type="number"],
             label {
                 font-size: 16px;
             }
@@ -103,78 +313,257 @@
             #container {
                 flex-direction: column;
             }
+
+            #qrcode-block {
+                position: static;
+            }
+        }
+
+        @media print {
+            html, body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+
+            body * {
+                visibility: hidden;
+            }
+
+            #invoiceDoc, #invoiceDoc * {
+                visibility: visible;
+            }
+
+            #invoiceDoc {
+                display: block;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                color: #000;
+                background: #fff;
+            }
+
+            #invoiceDoc .inv-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                border-bottom: 2px solid #000;
+                padding-bottom: 8px;
+                margin-bottom: 16px;
+            }
+
+            #invoiceDoc table.inv-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 14px 0;
+            }
+
+            #invoiceDoc table.inv-table th,
+            #invoiceDoc table.inv-table td {
+                border: 1px solid #000;
+                padding: 6px 8px;
+                font-size: 13px;
+            }
+
+            #invoiceDoc .inv-qr img {
+                width: 160px;
+                height: 160px;
+            }
+
+            #invoiceDoc .inv-sign-block {
+                display: flex;
+                gap: 60px;
+                margin-top: 40px;
+                align-items: flex-start;
+            }
+
+            #invoiceDoc .inv-sign-row {
+                display: flex;
+                align-items: flex-end;
+                gap: 6px;
+                font-size: 13px;
+                white-space: nowrap;
+            }
+
+            #invoiceDoc .inv-sign-slot {
+                position: relative;
+                flex: 1;
+                min-width: 200px;
+                border-bottom: 1px solid #000;
+                height: 34px;
+            }
+
+            #invoiceDoc .inv-sign-img {
+                position: absolute;
+                bottom: 2px;
+                left: 8px;
+                max-height: 30px;
+                max-width: 180px;
+            }
+
+            #invoiceDoc .inv-stamp-img {
+                max-height: 110px;
+                max-width: 110px;
+                opacity: 0.85;
+            }
         }
     </style>
 </head>
 
 <body>
-    <h1>Генерация QR-кода для оплаты по банковским реквизитам</h1>
+    <div id="page-header">
+        <h1>Генерация QR-кода для оплаты по банковским реквизитам</h1>
+        <button id="theme-toggle" type="button" onclick="toggleTheme()">🌙 Тёмная тема</button>
+    </div>
     <p>QR-код предназначен для сканирования через банковские приложения.</p>
 
     <div class="info-box">
         <strong>Что происходит на этой странице:</strong>
         <ul>
             <li>Вы заполняете форму с банковскими реквизитами и суммой — эти данные автоматически превращаются в
-                специальную строку, по которой формируется QR-код.</li>
+                специальную строку, по которой формируется QR-код (формат ГОСТ Р 56042-2014, «оплата по реквизитам» —
+                его читают банковские приложения при сканировании квитанций).</li>
             <li>QR-код можно отсканировать в любом банковском приложении (например, Сбербанк, Тинькофф, ВТБ и др.),
                 чтобы сразу подставились реквизиты для оплаты.</li>
             <li>Если вы нажмёте кнопку «Сохранить результат», введённые данные сохранятся у вас в браузере. Это значит,
                 что когда вы вернётесь на эту страницу — ваши сохранённые записи будут отображены ниже, и вы сможете
                 быстро сгенерировать QR-код повторно.</li>
-            <li>Ничего не отправляется на сервер — все данные хранятся только в вашем браузере.</li>
+            <li>Ничего не отправляется на сервер — все данные, включая подпись и печать, хранятся только в вашем
+                браузере.</li>
         </ul>
     </div>
 
     <div id="container">
         <div id="form-block">
             <form id="qrForm">
-                <label class="required">Наименование получателя платежа:<br>
-                    <input type="text" name="Name" placeholder="Наименование получателя платежа" required
-                        oninput="generateQRCode()">
-                </label>
+                <fieldset>
+                    <legend>Получатель платежа</legend>
 
-                <label>ИНН получателя:<br>
-                    <input type="text" name="PayeeINN" placeholder="ИНН получателя" oninput="generateQRCode()">
-                </label>
+                    <label>Наименование получателя платежа: <span class="req-mark">*</span><br>
+                        <input type="text" name="Name" placeholder="Наименование получателя платежа" required
+                            oninput="onFormChange()">
+                    </label>
 
-                <label>КПП:<br>
-                    <input type="text" name="KPP" placeholder="КПП" oninput="generateQRCode()">
-                </label>
+                    <label>ИНН получателя:<br>
+                        <input type="text" name="PayeeINN" placeholder="ИНН получателя" inputmode="numeric"
+                            maxlength="12" oninput="onFormChange()">
+                        <span class="field-msg" id="msg-PayeeINN"></span>
+                    </label>
 
-                <label class="required">Номер расчетного счета получателя платежа:<br>
-                    <input type="text" name="PersonalAcc" placeholder="Номер расчетного счета получателя платежа"
-                        required oninput="generateQRCode()">
-                </label>
+                    <label>КПП:<br>
+                        <input type="text" name="KPP" placeholder="КПП" inputmode="numeric" maxlength="9"
+                            oninput="onFormChange()">
+                    </label>
 
-                <label class="required">Наименование банка получателя платежа:<br>
-                    <input type="text" name="BankName" placeholder="Наименование банка получателя платежа" required
-                        oninput="generateQRCode()">
-                </label>
+                    <label>Номер расчетного счета получателя платежа: <span class="req-mark">*</span><br>
+                        <input type="text" name="PersonalAcc" placeholder="Номер расчетного счета получателя платежа"
+                            required inputmode="numeric" maxlength="20" oninput="onFormChange()">
+                        <span class="field-msg" id="msg-PersonalAcc"></span>
+                    </label>
 
-                <label class="required">БИК:<br>
-                    <input type="text" name="BIC" placeholder="БИК" required oninput="generateQRCode()">
-                </label>
+                    <label>Наименование банка получателя платежа: <span class="req-mark">*</span><br>
+                        <input type="text" name="BankName" placeholder="Наименование банка получателя платежа" required
+                            oninput="onFormChange()">
+                    </label>
 
-                <label class="required">Номер кор./сч. банка получателя платежа:<br>
-                    <input type="text" name="CorrespAcc" placeholder="Номер кор./сч. банка получателя платежа" required
-                        oninput="generateQRCode()">
-                </label>
+                    <label>БИК: <span class="req-mark">*</span><br>
+                        <input type="text" name="BIC" placeholder="БИК" required inputmode="numeric" maxlength="9"
+                            oninput="onFormChange()">
+                        <span class="field-msg" id="msg-BIC"></span>
+                    </label>
 
-                <label>Назначение платежа:<br>
-                    <input type="text" name="Purpose" placeholder="Назначение платежа" oninput="generateQRCode()">
-                </label>
+                    <label>Номер кор./сч. банка получателя платежа: <span class="req-mark">*</span><br>
+                        <input type="text" name="CorrespAcc" placeholder="Номер кор./сч. банка получателя платежа"
+                            required inputmode="numeric" maxlength="20" oninput="onFormChange()">
+                        <span class="field-msg" id="msg-CorrespAcc"></span>
+                    </label>
+                </fieldset>
 
-                <label>Сумма платежа (в рублях без копеек):<br>
-                    <input type="text" name="Sum" placeholder="Сумма платежа (в рублях без копеек)"
-                        oninput="generateQRCode()">
-                </label>
+                <fieldset>
+                    <legend>Плательщик и назначение платежа</legend>
 
-                <label>Название/тег для сохранения qr кода:<br>
-                    <input type="text" id="saveLabel" placeholder="Например, Оплата за март">
-                </label>
+                    <label>Плательщик (необязательно, для счёта):<br>
+                        <input type="text" name="PayerName" placeholder="Наименование или ФИО плательщика"
+                            oninput="onFormChange()">
+                    </label>
 
-                <button type="button" onclick="saveResult()">Сохранить результат</button>
+                    <label>Назначение платежа:<br>
+                        <input type="text" name="Purpose" placeholder="Назначение платежа" oninput="onFormChange()">
+                    </label>
+                    <div class="btn-row" style="margin-top:-6px;">
+                        <button type="button" onclick="appendCurrentMonth()">📅 Текущий месяц в назначение</button>
+                    </div>
+
+                    <label>
+                        <input type="checkbox" id="useItemsToggle" onchange="onItemsToggle()">
+                        Указать состав счёта построчно (наименование, кол-во, цена)
+                    </label>
+
+                    <div id="itemsBlock" style="display:none;">
+                        <table class="items-table" id="itemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Наименование</th>
+                                    <th class="col-qty">Кол-во</th>
+                                    <th class="col-price">Цена, ₽</th>
+                                    <th class="col-sum">Сумма, ₽</th>
+                                    <th class="col-del"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsTableBody"></tbody>
+                            <tfoot>
+                                <tr id="itemsTotalRow">
+                                    <td colspan="3">Итого</td>
+                                    <td id="itemsTotalCell">0</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div class="btn-row" style="margin-top:0;">
+                            <button type="button" onclick="addItemRow()">➕ Добавить позицию</button>
+                        </div>
+                    </div>
+
+                    <label>Сумма платежа (в рублях, можно с копейками через точку или запятую):<br>
+                        <input type="text" name="Sum" id="sumInput" placeholder="Сумма платежа"
+                            oninput="onFormChange()">
+                    </label>
+                    <p class="hint" id="sumInWords"></p>
+
+                    <label>Название/тег для сохранения qr кода:<br>
+                        <input type="text" id="saveLabel" placeholder="Например, Оплата за март">
+                    </label>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Подпись и печать для счёта (необязательно)</legend>
+                    <p class="hint">Загрузите один раз изображение подписи и печати (PNG/JPG со прозрачным фоном
+                        лучше всего) — они будут появляться на всех печатаемых счетах. Хранятся только в этом
+                        браузере.</p>
+                    <div class="sig-stamp-grid">
+                        <div class="sig-stamp-box">
+                            <label for="signatureInput">Подпись (руководитель):</label>
+                            <input type="file" id="signatureInput" accept="image/*" onchange="onImageUpload(event, 'signature')">
+                            <img id="signaturePreview" class="sig-stamp-preview" style="display:none;">
+                            <div class="btn-row"><button type="button" onclick="clearImage('signature')">🗑️ Удалить подпись</button></div>
+                        </div>
+                        <div class="sig-stamp-box">
+                            <label for="stampInput">Печать организации:</label>
+                            <input type="file" id="stampInput" accept="image/*" onchange="onImageUpload(event, 'stamp')">
+                            <img id="stampPreview" class="sig-stamp-preview" style="display:none;">
+                            <div class="btn-row"><button type="button" onclick="clearImage('stamp')">🗑️ Удалить печать</button></div>
+                        </div>
+                    </div>
+                </fieldset>
+
                 <p><em>Поля, помеченные * — обязательны для заполнения</em></p>
+
+                <div class="btn-row">
+                    <button type="button" class="primary" onclick="saveResult()">💾 Сохранить результат</button>
+                    <button type="button" onclick="downloadQrPng()">🖼️ Скачать QR (PNG)</button>
+                    <button type="button" onclick="printInvoice()">🖨️ Печать / Скачать PDF</button>
+                    <button type="button" id="shareBtn" style="display:none;" onclick="shareQr()">📤 Поделиться</button>
+                </div>
             </form>
         </div>
 
@@ -188,19 +577,350 @@
 
     <div id="saved-list">
         <h3>Сохранённые результаты:</h3>
+        <div class="btn-row">
+            <button type="button" onclick="exportTemplates()">⬇️ Экспортировать шаблоны (JSON)</button>
+            <label style="display:inline-block;margin:0;">
+                <input type="file" id="importInput" accept="application/json" style="display:none;" onchange="importTemplates(event)">
+                <button type="button" onclick="document.getElementById('importInput').click()">⬆️ Импортировать шаблоны</button>
+            </label>
+            <button type="button" class="danger" onclick="clearAllData()">🗑️ Очистить все сохранённые данные</button>
+        </div>
         <div id="savedItems"></div>
     </div>
 
+    <!-- Печатная форма счёта: скрыта на экране, показывается только при печати -->
+    <div id="invoiceDoc">
+        <div class="inv-header">
+            <div>
+                <h2 id="inv-title">Счёт на оплату</h2>
+                <div id="inv-payer-line"></div>
+            </div>
+            <div class="inv-qr"><img id="inv-qr-img" alt="QR-код для оплаты"></div>
+        </div>
+        <div id="inv-requisites"></div>
+        <table class="inv-table" id="inv-items-table" style="display:none;">
+            <thead>
+                <tr><th>№</th><th>Наименование</th><th>Кол-во</th><th>Цена, ₽</th><th>Сумма, ₽</th></tr>
+            </thead>
+            <tbody id="inv-items-body"></tbody>
+        </table>
+        <p id="inv-purpose-line"></p>
+        <p><strong id="inv-total-line"></strong></p>
+        <p id="inv-words-line"></p>
+        <div class="inv-sign-block">
+            <div class="inv-sign-row">
+                <span>Руководитель</span>
+                <span class="inv-sign-slot"><img id="inv-sign-img" class="inv-sign-img" style="display:none;"></span>
+                <span>/ <span id="inv-signer-name"></span> /</span>
+            </div>
+            <div>
+                <img id="inv-stamp-img" class="inv-stamp-img" style="display:none;">
+                <div class="hint" style="text-align:center;">М.П.</div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const STORAGE_KEYS = {
+            saved: 'savedQRs',
+            theme: 'qrpay_theme',
+            signature: 'qrpay_signature_img',
+            stamp: 'qrpay_stamp_img',
+            invoiceCounter: 'qrpay_invoice_counter'
+        };
+
+        /* ---------- Тема ---------- */
+        function applyTheme (theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const btn = document.getElementById('theme-toggle');
+            btn.textContent = theme === 'dark' ? '☀️ Светлая тема' : '🌙 Тёмная тема';
+        }
+
+        function toggleTheme () {
+            const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            localStorage.setItem(STORAGE_KEYS.theme, next);
+            applyTheme(next);
+        }
+
+        /* ---------- Валидация реквизитов ---------- */
+        function setFieldStatus (name, status, message) {
+            const input = document.querySelector(`[name="${name}"]`);
+            const msg = document.getElementById('msg-' + name);
+            if (!input) return;
+            input.classList.remove('invalid', 'warn');
+            if (status === 'error') input.classList.add('invalid');
+            if (status === 'warn') input.classList.add('warn');
+            if (msg) {
+                msg.textContent = message || '';
+                msg.className = 'field-msg' + (status ? ' ' + status : '');
+            }
+        }
+
+        function checkInn (inn) {
+            if (!inn) return { status: '', message: '' };
+            if (!/^\d{10}$|^\d{12}$/.test(inn)) {
+                return { status: 'error', message: 'ИНН должен содержать 10 или 12 цифр' };
+            }
+            const digits = inn.split('').map(Number);
+            const checksum = (coeffs, arr) => coeffs.reduce((sum, c, i) => sum + c * arr[i], 0) % 11 % 10;
+            if (inn.length === 10) {
+                const n10 = checksum([2, 4, 10, 3, 5, 9, 4, 6, 8], digits);
+                if (n10 !== digits[9]) return { status: 'error', message: 'Некорректная контрольная сумма ИНН' };
+            } else {
+                const n11 = checksum([7, 2, 4, 10, 3, 5, 9, 4, 6, 8], digits);
+                const n12 = checksum([3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8], digits);
+                if (n11 !== digits[10] || n12 !== digits[11]) {
+                    return { status: 'error', message: 'Некорректная контрольная сумма ИНН' };
+                }
+            }
+            return { status: '', message: '' };
+        }
+
+        function checkBic (bic) {
+            if (!bic) return { status: '', message: '' };
+            if (!/^\d{9}$/.test(bic)) return { status: 'error', message: 'БИК должен содержать 9 цифр' };
+            if (!bic.startsWith('04')) return { status: 'warn', message: 'Обычно БИК российских банков начинается с «04»' };
+            return { status: '', message: '' };
+        }
+
+        function accountControlOk (bic, account, isCorrespondent) {
+            if (!/^\d{9}$/.test(bic) || !/^\d{20}$/.test(account)) return null;
+            const prefix = isCorrespondent ? '0' + bic.slice(4, 6) : bic.slice(-3);
+            const str = prefix + account;
+            const weights = [7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1];
+            let sum = 0;
+            for (let i = 0; i < 23; i++) sum += Number(str[i]) * weights[i];
+            return sum % 10 === 0;
+        }
+
+        function checkAccount (fieldName, bic, account, isCorrespondent) {
+            if (!account) return { status: '', message: '' };
+            if (!/^\d{20}$/.test(account)) {
+                return { status: 'error', message: 'Номер счёта должен содержать 20 цифр' };
+            }
+            const ok = accountControlOk(bic, account, isCorrespondent);
+            if (ok === false) {
+                return { status: 'warn', message: 'Контрольное число не сходится с БИК — проверьте номер счёта и БИК' };
+            }
+            return { status: '', message: '' };
+        }
+
+        function runValidation () {
+            const form = document.getElementById('qrForm');
+            const fd = new FormData(form);
+            const inn = (fd.get('PayeeINN') || '').trim();
+            const bic = (fd.get('BIC') || '').trim();
+            const acc = (fd.get('PersonalAcc') || '').trim();
+            const corr = (fd.get('CorrespAcc') || '').trim();
+
+            const innRes = checkInn(inn);
+            setFieldStatus('PayeeINN', innRes.status, innRes.message);
+
+            const bicRes = checkBic(bic);
+            setFieldStatus('BIC', bicRes.status, bicRes.message);
+
+            const accRes = checkAccount('PersonalAcc', bic, acc, false);
+            setFieldStatus('PersonalAcc', accRes.status, accRes.message);
+
+            const corrRes = checkAccount('CorrespAcc', bic, corr, true);
+            setFieldStatus('CorrespAcc', corrRes.status, corrRes.message);
+        }
+
+        /* ---------- Сумма: копейки и пропись ---------- */
+        function parseAmountToKopecks (str) {
+            if (!str) return null;
+            const normalized = String(str).replace(',', '.').replace(/[^0-9.]/g, '');
+            if (!normalized) return null;
+            const num = parseFloat(normalized);
+            if (isNaN(num) || num < 0) return null;
+            return Math.round(num * 100);
+        }
+
+        const RU_ONES = ['', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять'];
+        const RU_ONES_F = ['', 'одна', 'две', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять'];
+        const RU_TEENS = ['десять', 'одиннадцать', 'двенадцать', 'тринадцать', 'четырнадцать', 'пятнадцать', 'шестнадцать', 'семнадцать', 'восемнадцать', 'девятнадцать'];
+        const RU_TENS = ['', '', 'двадцать', 'тридцать', 'сорок', 'пятьдесят', 'шестьдесят', 'семьдесят', 'восемьдесят', 'девяносто'];
+        const RU_HUNDREDS = ['', 'сто', 'двести', 'триста', 'четыреста', 'пятьсот', 'шестьсот', 'семьсот', 'восемьсот', 'девятьсот'];
+        const RU_SCALES = [
+            { forms: ['', '', ''], feminine: false },
+            { forms: ['тысяча', 'тысячи', 'тысяч'], feminine: true },
+            { forms: ['миллион', 'миллиона', 'миллионов'], feminine: false },
+            { forms: ['миллиард', 'миллиарда', 'миллиардов'], feminine: false }
+        ];
+
+        function ruPluralForm (n, forms) {
+            const mod100 = Math.abs(n) % 100;
+            const mod10 = mod100 % 10;
+            if (mod100 > 10 && mod100 < 20) return forms[2];
+            if (mod10 === 1) return forms[0];
+            if (mod10 >= 2 && mod10 <= 4) return forms[1];
+            return forms[2];
+        }
+
+        function ruTripleWords (n, feminine) {
+            const words = [];
+            const h = Math.floor(n / 100);
+            const t = n % 100;
+            if (h) words.push(RU_HUNDREDS[h]);
+            if (t >= 10 && t < 20) {
+                words.push(RU_TEENS[t - 10]);
+            } else {
+                const d1 = Math.floor(t / 10);
+                const d2 = t % 10;
+                if (d1) words.push(RU_TENS[d1]);
+                if (d2) words.push((feminine ? RU_ONES_F : RU_ONES)[d2]);
+            }
+            return words;
+        }
+
+        function numberToWordsRu (num) {
+            if (num === 0) return 'ноль';
+            const groups = [];
+            let n = num;
+            while (n > 0) {
+                groups.push(n % 1000);
+                n = Math.floor(n / 1000);
+            }
+            const parts = [];
+            for (let i = groups.length - 1; i >= 0; i--) {
+                const g = groups[i];
+                if (g === 0) continue;
+                const scale = RU_SCALES[i] || { forms: ['', '', ''], feminine: false };
+                parts.push(...ruTripleWords(g, scale.feminine));
+                if (i > 0) parts.push(ruPluralForm(g, scale.forms));
+            }
+            return parts.join(' ');
+        }
+
+        function capitalizeFirst (str) {
+            return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+        }
+
+        function amountToWordsRu (rubles, kopecks) {
+            const rublesWords = capitalizeFirst(numberToWordsRu(rubles));
+            const rubForm = ruPluralForm(rubles, ['рубль', 'рубля', 'рублей']);
+            const kopStr = String(kopecks).padStart(2, '0');
+            const kopForm = ruPluralForm(kopecks, ['копейка', 'копейки', 'копеек']);
+            return `${rublesWords} ${rubForm} ${kopStr} ${kopForm}`;
+        }
+
+        /* ---------- Позиции счёта ---------- */
+        function addItemRow (name, qty, price) {
+            const tbody = document.getElementById('itemsTableBody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="item-name" placeholder="Наименование товара/услуги" value="${name ? escapeHtml(name) : ''}"></td>
+                <td class="col-qty"><input type="text" class="item-qty" inputmode="decimal" value="${qty !== undefined ? qty : 1}"></td>
+                <td class="col-price"><input type="text" class="item-price" inputmode="decimal" value="${price !== undefined ? price : ''}"></td>
+                <td class="col-sum item-row-sum">0</td>
+                <td class="col-del"><button type="button" onclick="this.closest('tr').remove(); onItemsChange();">✕</button></td>`;
+            tbody.appendChild(row);
+            row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', onItemsChange));
+            onItemsChange();
+        }
+
+        function escapeHtml (str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function onItemsToggle () {
+            const enabled = document.getElementById('useItemsToggle').checked;
+            document.getElementById('itemsBlock').style.display = enabled ? 'block' : 'none';
+            document.getElementById('sumInput').readOnly = enabled;
+            if (enabled && document.getElementById('itemsTableBody').children.length === 0) {
+                addItemRow();
+            }
+            onItemsChange();
+        }
+
+        function onItemsChange () {
+            const rows = document.querySelectorAll('#itemsTableBody tr');
+            let total = 0;
+            rows.forEach(row => {
+                const qty = parseFloat((row.querySelector('.item-qty').value || '0').replace(',', '.')) || 0;
+                const price = parseFloat((row.querySelector('.item-price').value || '0').replace(',', '.')) || 0;
+                const sum = qty * price;
+                row.querySelector('.item-row-sum').textContent = sum ? sum.toFixed(2).replace(/\.00$/, '') : '0';
+                total += sum;
+            });
+            document.getElementById('itemsTotalCell').textContent = total ? total.toFixed(2).replace(/\.00$/, '') : '0';
+            if (document.getElementById('useItemsToggle').checked) {
+                document.getElementById('sumInput').value = total ? total.toFixed(2) : '';
+            }
+            onFormChange();
+        }
+
+        function getItemsData () {
+            const rows = document.querySelectorAll('#itemsTableBody tr');
+            const items = [];
+            rows.forEach(row => {
+                const name = row.querySelector('.item-name').value.trim();
+                const qty = parseFloat((row.querySelector('.item-qty').value || '0').replace(',', '.')) || 0;
+                const price = parseFloat((row.querySelector('.item-price').value || '0').replace(',', '.')) || 0;
+                if (name || qty || price) items.push({ name, qty, price, sum: qty * price });
+            });
+            return items;
+        }
+
+        /* ---------- Назначение платежа: месяц ---------- */
+        const RU_MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+        function appendCurrentMonth () {
+            const input = document.querySelector('[name="Purpose"]');
+            const now = new Date();
+            const text = `за ${RU_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+            input.value = input.value ? `${input.value} ${text}` : capitalizeFirst(text);
+            onFormChange();
+        }
+
+        /* ---------- Подпись / печать ---------- */
+        function onImageUpload (event, kind) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                const key = kind === 'signature' ? STORAGE_KEYS.signature : STORAGE_KEYS.stamp;
+                try {
+                    localStorage.setItem(key, reader.result);
+                } catch (e) {
+                    console.error('Не удалось сохранить изображение', e);
+                }
+                loadSignatureAndStamp();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImage (kind) {
+            const key = kind === 'signature' ? STORAGE_KEYS.signature : STORAGE_KEYS.stamp;
+            localStorage.removeItem(key);
+            loadSignatureAndStamp();
+        }
+
+        function loadSignatureAndStamp () {
+            const sig = localStorage.getItem(STORAGE_KEYS.signature);
+            const stamp = localStorage.getItem(STORAGE_KEYS.stamp);
+            const sigPreview = document.getElementById('signaturePreview');
+            const stampPreview = document.getElementById('stampPreview');
+            sigPreview.src = sig || '';
+            sigPreview.style.display = sig ? 'block' : 'none';
+            stampPreview.src = stamp || '';
+            stampPreview.style.display = stamp ? 'block' : 'none';
+        }
+
+        /* ---------- QR ---------- */
         function generateQRCode () {
             const form = document.getElementById('qrForm');
             const formData = new FormData(form);
             let data = "ST00012";
             for (let [key, value] of formData.entries()) {
+                if (key === 'PayerName') continue; // не входит в стандарт ST00012
                 if (value.trim()) {
                     if (key === "Sum") {
-                        const sumWithZeroes = value.replace(/\\D/g, '') + "00";
-                        data += `|${key}=${sumWithZeroes}`;
+                        const kopecks = parseAmountToKopecks(value);
+                        data += `|${key}=${kopecks !== null ? kopecks : ''}`;
                     } else {
                         data += `|${key}=${value}`;
                     }
@@ -209,9 +929,36 @@
             document.getElementById('data-string').textContent = data;
             document.getElementById('qrcode').innerHTML = "";
             QRCode.toCanvas(document.createElement('canvas'), data, function (error, canvas) {
-                if (error) console.error(error);
+                if (error) { console.error(error); return; }
+                canvas.id = 'qrCanvas';
                 document.getElementById('qrcode').appendChild(canvas);
+                updateShareButtonVisibility();
             });
+        }
+
+        function updateSumInWords () {
+            const sumValue = document.getElementById('sumInput').value;
+            const kopecks = parseAmountToKopecks(sumValue);
+            const el = document.getElementById('sumInWords');
+            if (kopecks === null) { el.textContent = ''; return; }
+            const rubles = Math.floor(kopecks / 100);
+            const kop = kopecks % 100;
+            el.textContent = amountToWordsRu(rubles, kop);
+        }
+
+        function onFormChange () {
+            runValidation();
+            updateSumInWords();
+            generateQRCode();
+        }
+
+        /* ---------- Сохранённые шаблоны ---------- */
+        function getSavedList () {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEYS.saved) || '[]');
+            } catch (e) {
+                return [];
+            }
         }
 
         function saveResult () {
@@ -223,54 +970,224 @@
             formData.forEach((value, key) => {
                 values[key] = value;
             });
-            const saved = JSON.parse(localStorage.getItem('savedQRs') || '[]');
-            saved.push({ label, values });
-            localStorage.setItem('savedQRs', JSON.stringify(saved));
+            const saved = getSavedList();
+            saved.push({ label, values, items: getItemsData(), useItems: document.getElementById('useItemsToggle').checked });
+            localStorage.setItem(STORAGE_KEYS.saved, JSON.stringify(saved));
             document.getElementById('saveLabel').value = "";
             loadSavedResults();
         }
 
         function loadSavedResults () {
-            const saved = JSON.parse(localStorage.getItem('savedQRs') || '[]');
+            const saved = getSavedList();
             const container = document.getElementById('savedItems');
             container.innerHTML = "";
             saved.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'saved-item';
-                const values = Object.entries(item.values)
-                    .filter(([key, val]) => val.trim() !== '')
+                const values = Object.entries(item.values || {})
+                    .filter(([key, val]) => (val || '').trim() !== '')
                     .map(([key, val]) => val)
                     .join(', ');
-                div.innerHTML = `<strong>${item.label}</strong><br>${values}<br>
-                <button onclick="loadToForm(${index})">Сгенерировать QR-код</button>
-                <button onclick="deleteSaved(${index})">Удалить</button>`;
+                div.innerHTML = `<strong>${escapeHtml(item.label)}</strong><br>${escapeHtml(values)}
+                <div class="btn-row" style="margin:8px 0 0;">
+                    <button onclick="loadToForm(${index})">🔳 Сгенерировать QR-код</button>
+                    <button class="danger" onclick="deleteSaved(${index})">🗑️ Удалить</button>
+                </div>`;
                 container.appendChild(div);
             });
         }
 
         function loadToForm (index) {
-            const saved = JSON.parse(localStorage.getItem('savedQRs') || '[]');
+            const saved = getSavedList();
             const item = saved[index];
             if (!item) return;
             const form = document.getElementById('qrForm');
             for (let key in item.values) {
-                if (form.elements[key]) {
-                    form.elements[key].value = item.values[key];
-                }
+                if (form.elements[key]) form.elements[key].value = item.values[key];
             }
-            generateQRCode();
+            document.getElementById('itemsTableBody').innerHTML = '';
+            document.getElementById('useItemsToggle').checked = !!item.useItems;
+            document.getElementById('itemsBlock').style.display = item.useItems ? 'block' : 'none';
+            document.getElementById('sumInput').readOnly = !!item.useItems;
+            (item.items || []).forEach(it => addItemRow(it.name, it.qty, it.price));
+            onFormChange();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function deleteSaved (index) {
-            const saved = JSON.parse(localStorage.getItem('savedQRs') || '[]');
+            const saved = getSavedList();
             saved.splice(index, 1);
-            localStorage.setItem('savedQRs', JSON.stringify(saved));
+            localStorage.setItem(STORAGE_KEYS.saved, JSON.stringify(saved));
             loadSavedResults();
         }
 
-        window.onload = function () {
-            generateQRCode();
+        function exportTemplates () {
+            const payload = {
+                type: 'sbp-qrcode-templates',
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                items: getSavedList()
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `qr-templates-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function importTemplates (event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const parsed = JSON.parse(reader.result);
+                    const incoming = Array.isArray(parsed) ? parsed : (parsed.items || []);
+                    if (!Array.isArray(incoming)) throw new Error('Некорректный формат файла');
+                    const current = getSavedList();
+                    const merged = current.concat(incoming);
+                    localStorage.setItem(STORAGE_KEYS.saved, JSON.stringify(merged));
+                    loadSavedResults();
+                    alert(`Импортировано шаблонов: ${incoming.length}`);
+                } catch (e) {
+                    alert('Не удалось прочитать файл: ' + e.message);
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllData () {
+            if (!confirm('Удалить все сохранённые шаблоны, подпись и печать из этого браузера? Это действие необратимо.')) return;
+            Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
             loadSavedResults();
+            loadSignatureAndStamp();
+            document.getElementById('qrForm').reset();
+            onFormChange();
+        }
+
+        /* ---------- Скачать QR / поделиться ---------- */
+        function downloadQrPng () {
+            const canvas = document.getElementById('qrCanvas');
+            if (!canvas) return;
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'qr-code.png';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        function updateShareButtonVisibility () {
+            const btn = document.getElementById('shareBtn');
+            btn.style.display = (navigator.share && navigator.canShare) ? 'inline-block' : 'none';
+        }
+
+        async function shareQr () {
+            const canvas = document.getElementById('qrCanvas');
+            if (!canvas) return;
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], 'qr-code.png', { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({ files: [file], title: 'QR-код для оплаты' });
+                    } catch (e) { /* пользователь отменил */ }
+                }
+            });
+        }
+
+        /* ---------- Печать счёта ---------- */
+        function nextInvoiceNumber () {
+            let n = parseInt(localStorage.getItem(STORAGE_KEYS.invoiceCounter) || '0', 10) + 1;
+            localStorage.setItem(STORAGE_KEYS.invoiceCounter, String(n));
+            return n;
+        }
+
+        function buildInvoiceDoc () {
+            const form = document.getElementById('qrForm');
+            const fd = new FormData(form);
+            const get = (k) => (fd.get(k) || '').toString().trim();
+
+            const invoiceNumber = nextInvoiceNumber();
+            const today = new Date().toLocaleDateString('ru-RU');
+            document.getElementById('inv-title').textContent = `Счёт на оплату № ${invoiceNumber} от ${today}`;
+
+            const payer = get('PayerName');
+            document.getElementById('inv-payer-line').textContent = payer ? `Плательщик: ${payer}` : '';
+
+            const reqLines = [
+                `Получатель: ${get('Name')}`,
+                get('PayeeINN') ? `ИНН: ${get('PayeeINN')}${get('KPP') ? ', КПП: ' + get('KPP') : ''}` : '',
+                `Банк получателя: ${get('BankName')}, БИК: ${get('BIC')}`,
+                `Р/с: ${get('PersonalAcc')}, к/с: ${get('CorrespAcc')}`
+            ].filter(Boolean);
+            document.getElementById('inv-requisites').innerHTML = reqLines.map(l => `<div>${escapeHtml(l)}</div>`).join('');
+
+            const items = getItemsData();
+            const itemsTable = document.getElementById('inv-items-table');
+            const itemsBody = document.getElementById('inv-items-body');
+            itemsBody.innerHTML = '';
+            if (document.getElementById('useItemsToggle').checked && items.length) {
+                itemsTable.style.display = 'table';
+                items.forEach((it, i) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${i + 1}</td><td>${escapeHtml(it.name)}</td><td>${it.qty}</td><td>${it.price.toFixed(2)}</td><td>${it.sum.toFixed(2)}</td>`;
+                    itemsBody.appendChild(row);
+                });
+                document.getElementById('inv-purpose-line').textContent = '';
+            } else {
+                itemsTable.style.display = 'none';
+                const purpose = get('Purpose');
+                document.getElementById('inv-purpose-line').textContent = purpose ? `Назначение платежа: ${purpose}` : '';
+            }
+
+            const kopecks = parseAmountToKopecks(get('Sum'));
+            if (kopecks !== null) {
+                const rub = Math.floor(kopecks / 100);
+                const kop = kopecks % 100;
+                document.getElementById('inv-total-line').textContent = `Итого к оплате: ${rub}.${String(kop).padStart(2, '0')} ₽`;
+                document.getElementById('inv-words-line').textContent = amountToWordsRu(rub, kop);
+            } else {
+                document.getElementById('inv-total-line').textContent = '';
+                document.getElementById('inv-words-line').textContent = '';
+            }
+
+            const canvas = document.getElementById('qrCanvas');
+            const qrImg = document.getElementById('inv-qr-img');
+            qrImg.src = canvas ? canvas.toDataURL('image/png') : '';
+
+            const sig = localStorage.getItem(STORAGE_KEYS.signature);
+            const stampImg = localStorage.getItem(STORAGE_KEYS.stamp);
+            const sigImgEl = document.getElementById('inv-sign-img');
+            sigImgEl.src = sig || '';
+            sigImgEl.style.display = sig ? 'block' : 'none';
+            const stampEl = document.getElementById('inv-stamp-img');
+            stampEl.src = stampImg || '';
+            stampEl.style.display = stampImg ? 'block' : 'none';
+            document.getElementById('inv-signer-name').textContent = get('Name');
+        }
+
+        function printInvoice () {
+            buildInvoiceDoc();
+            setTimeout(() => window.print(), 50);
+        }
+
+        /* ---------- Инициализация ---------- */
+        window.onload = function () {
+            const savedTheme = localStorage.getItem(STORAGE_KEYS.theme) || 'light';
+            applyTheme(savedTheme);
+            loadSignatureAndStamp();
+            loadSavedResults();
+            onFormChange();
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            }
         };
     </script>
 </body>
