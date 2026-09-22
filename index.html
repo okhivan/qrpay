@@ -190,6 +190,95 @@
             color: var(--error);
         }
 
+        .help-btn {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 15px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .info-box {
+            margin-top: 10px;
+        }
+
+        .field {
+            margin-bottom: 14px;
+        }
+
+        .field-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .field input[type="text"] {
+            margin-bottom: 2px;
+        }
+
+        .hint-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .hint-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            border: 1px solid var(--input-border);
+            background: var(--card-bg);
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1;
+            padding: 0;
+            cursor: help;
+        }
+
+        .hint-icon:hover, .hint-icon:focus {
+            background: var(--accent);
+            color: var(--accent-fg);
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .hint-text {
+            position: absolute;
+            left: 0;
+            bottom: 130%;
+            background: #20242b;
+            color: #f5f5f5;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            font-size: 12.5px;
+            font-weight: normal;
+            line-height: 1.4;
+            padding: 7px 10px;
+            border-radius: 6px;
+            width: max-content;
+            max-width: 240px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .12s ease;
+            z-index: 30;
+            text-align: left;
+        }
+
+        .hint-wrap:hover .hint-text,
+        .hint-wrap:focus-within .hint-text {
+            opacity: 1;
+        }
+
         fieldset {
             border: 1px solid var(--card-border);
             border-radius: 6px;
@@ -413,11 +502,15 @@
 <body>
     <div id="page-header">
         <h1>Генерация QR-кода для оплаты по банковским реквизитам</h1>
-        <button id="theme-toggle" type="button" onclick="toggleTheme()">🌙 Тёмная тема</button>
+        <div class="btn-row" style="margin:0;">
+            <button id="helpToggle" type="button" class="help-btn" aria-expanded="false" aria-controls="helpBox"
+                title="Как это работает" onclick="toggleHelp()">?</button>
+            <button id="theme-toggle" type="button" onclick="toggleTheme()">🌙 Тёмная тема</button>
+        </div>
     </div>
     <p>QR-код предназначен для сканирования через банковские приложения.</p>
 
-    <div class="info-box">
+    <div class="info-box" id="helpBox" hidden>
         <strong>Что происходит на этой странице:</strong>
         <ul>
             <li>Вы заполняете форму с банковскими реквизитами и суммой — эти данные автоматически превращаются в
@@ -439,59 +532,101 @@
                 <fieldset>
                     <legend>Получатель платежа</legend>
 
-                    <label>Наименование получателя платежа: <span class="req-mark">*</span><br>
-                        <input type="text" name="Name" placeholder="Наименование получателя платежа" required
-                            oninput="onFormChange()">
-                    </label>
+                    <div class="field">
+                        <label class="field-label" for="f-Name">Наименование получателя <span class="req-mark">*</span>
+                            <span class="hint-wrap"><button type="button" class="hint-icon" tabindex="0">ⓘ</button><span
+                                    class="hint-text">Точное наименование организации или ФИО получателя — как в
+                                    реквизитах для перевода.</span></span>
+                        </label>
+                        <input type="text" id="f-Name" name="Name" placeholder="ООО «Ромашка» или ИП Иванов И. И."
+                            required oninput="onFormChange()">
+                    </div>
 
-                    <label>ИНН получателя:<br>
-                        <input type="text" name="PayeeINN" placeholder="ИНН получателя" inputmode="numeric"
-                            maxlength="12" oninput="onFormChange()">
+                    <div class="field">
+                        <label class="field-label" for="f-PayeeINN">ИНН
+                            <span class="hint-wrap"><button type="button" class="hint-icon" tabindex="0">ⓘ</button><span
+                                    class="hint-text">10 цифр для организаций, 12 — для ИП. Проверяется по контрольной
+                                    сумме.</span></span>
+                        </label>
+                        <input type="text" id="f-PayeeINN" name="PayeeINN" placeholder="Например, 7707083893"
+                            inputmode="numeric" maxlength="12" oninput="onFormChange()">
                         <span class="field-msg" id="msg-PayeeINN"></span>
-                    </label>
+                    </div>
 
-                    <label>КПП:<br>
-                        <input type="text" name="KPP" placeholder="КПП" inputmode="numeric" maxlength="9"
-                            oninput="onFormChange()">
-                    </label>
+                    <div class="field">
+                        <label class="field-label" for="f-KPP">КПП
+                            <span class="hint-wrap"><button type="button" class="hint-icon" tabindex="0">ⓘ</button><span
+                                    class="hint-text">9 цифр. У ИП обычно отсутствует.</span></span>
+                        </label>
+                        <input type="text" id="f-KPP" name="KPP" placeholder="Например, 770701001" inputmode="numeric"
+                            maxlength="9" oninput="onFormChange()">
+                    </div>
 
-                    <label>Номер расчетного счета получателя платежа: <span class="req-mark">*</span><br>
-                        <input type="text" name="PersonalAcc" placeholder="Номер расчетного счета получателя платежа"
+                    <div class="field">
+                        <label class="field-label" for="f-PersonalAcc">Расчётный счёт <span class="req-mark">*</span>
+                            <span class="hint-wrap"><button type="button" class="hint-icon" tabindex="0">ⓘ</button><span
+                                    class="hint-text">20 цифр. Сверяется с БИК по контрольному числу.</span></span>
+                        </label>
+                        <input type="text" id="f-PersonalAcc" name="PersonalAcc" placeholder="20 цифр"
                             required inputmode="numeric" maxlength="20" oninput="onFormChange()">
                         <span class="field-msg" id="msg-PersonalAcc"></span>
-                    </label>
+                    </div>
 
-                    <label>Наименование банка получателя платежа: <span class="req-mark">*</span><br>
-                        <input type="text" name="BankName" placeholder="Наименование банка получателя платежа" required
+                    <div class="field">
+                        <label class="field-label" for="f-BankName">Банк получателя <span class="req-mark">*</span>
+                            <span class="hint-wrap"><button type="button" class="hint-icon" tabindex="0">ⓘ</button><span
+                                    class="hint-text">Полное или краткое наименование банка, например «ПАО
+                                    СБЕРБАНК».</span></span>
+                        </label>
+                        <input type="text" id="f-BankName" name="BankName" placeholder="Например, ПАО СБЕРБАНК" required
                             oninput="onFormChange()">
-                    </label>
+                    </div>
 
-                    <label>БИК: <span class="req-mark">*</span><br>
-                        <input type="text" name="BIC" placeholder="БИК" required inputmode="numeric" maxlength="9"
-                            oninput="onFormChange()">
+                    <div class="field">
+                        <label class="field-label" for="f-BIC">БИК <span class="req-mark">*</span>
+                            <span class="hint-wrap"><button type="button" class="hint-icon" tabindex="0">ⓘ</button><span
+                                    class="hint-text">9 цифр, начинается с «04».</span></span>
+                        </label>
+                        <input type="text" id="f-BIC" name="BIC" placeholder="Например, 044525225" required
+                            inputmode="numeric" maxlength="9" oninput="onFormChange()">
                         <span class="field-msg" id="msg-BIC"></span>
-                    </label>
+                    </div>
 
-                    <label>Номер кор./сч. банка получателя платежа: <span class="req-mark">*</span><br>
-                        <input type="text" name="CorrespAcc" placeholder="Номер кор./сч. банка получателя платежа"
+                    <div class="field">
+                        <label class="field-label" for="f-CorrespAcc">Корр. счёт <span class="req-mark">*</span>
+                            <span class="hint-wrap"><button type="button" class="hint-icon" tabindex="0">ⓘ</button><span
+                                    class="hint-text">Корреспондентский счёт банка получателя — 20 цифр. Сверяется с
+                                    БИК.</span></span>
+                        </label>
+                        <input type="text" id="f-CorrespAcc" name="CorrespAcc" placeholder="20 цифр"
                             required inputmode="numeric" maxlength="20" oninput="onFormChange()">
                         <span class="field-msg" id="msg-CorrespAcc"></span>
-                    </label>
+                    </div>
                 </fieldset>
 
                 <fieldset>
                     <legend>Плательщик и назначение платежа</legend>
 
-                    <label>Плательщик (необязательно, для счёта):<br>
-                        <input type="text" name="PayerName" placeholder="Наименование или ФИО плательщика"
+                    <div class="field">
+                        <label class="field-label" for="f-PayerName">Плательщик
+                            <span class="hint-wrap"><button type="button" class="hint-icon" tabindex="0">ⓘ</button><span
+                                    class="hint-text">Необязательно. Кто платит по счёту — отображается в печатном
+                                    счёте.</span></span>
+                        </label>
+                        <input type="text" id="f-PayerName" name="PayerName" placeholder="Наименование или ФИО плательщика"
                             oninput="onFormChange()">
-                    </label>
+                    </div>
 
-                    <label>Назначение платежа:<br>
-                        <input type="text" name="Purpose" placeholder="Назначение платежа" oninput="onFormChange()">
-                    </label>
-                    <div class="btn-row" style="margin-top:-6px;">
-                        <button type="button" onclick="appendCurrentMonth()">📅 Текущий месяц в назначение</button>
+                    <div class="field">
+                        <label class="field-label" for="f-Purpose">Назначение платежа
+                            <span class="hint-wrap"><button type="button" class="hint-icon" tabindex="0">ⓘ</button><span
+                                    class="hint-text">Например: «Оплата по договору №12» или «За услуги».</span></span>
+                        </label>
+                        <input type="text" id="f-Purpose" name="Purpose" placeholder="Например, Оплата по договору №1"
+                            oninput="onFormChange()">
+                        <div class="btn-row" style="margin: 6px 0 0;">
+                            <button type="button" onclick="appendCurrentMonth()">📅 Текущий месяц в назначение</button>
+                        </div>
                     </div>
 
                     <label>
@@ -524,15 +659,25 @@
                         </div>
                     </div>
 
-                    <label>Сумма платежа (в рублях, можно с копейками через точку или запятую):<br>
-                        <input type="text" name="Sum" id="sumInput" placeholder="Сумма платежа"
+                    <div class="field">
+                        <label class="field-label" for="sumInput">Сумма, ₽
+                            <span class="hint-wrap"><button type="button" class="hint-icon" tabindex="0">ⓘ</button><span
+                                    class="hint-text">Можно указать копейки через точку или запятую. Если включены
+                                    позиции счёта ниже — считается автоматически.</span></span>
+                        </label>
+                        <input type="text" name="Sum" id="sumInput" placeholder="Например, 1500 или 1500.50"
                             oninput="onFormChange()">
-                    </label>
-                    <p class="hint" id="sumInWords"></p>
+                        <p class="hint" id="sumInWords" style="margin:4px 0 0;"></p>
+                    </div>
 
-                    <label>Название/тег для сохранения qr кода:<br>
+                    <div class="field">
+                        <label class="field-label" for="saveLabel">Тег для сохранения
+                            <span class="hint-wrap"><button type="button" class="hint-icon" tabindex="0">ⓘ</button><span
+                                    class="hint-text">Название, по которому вы найдёте этот шаблон в списке
+                                    «Сохранённые результаты».</span></span>
+                        </label>
                         <input type="text" id="saveLabel" placeholder="Например, Оплата за март">
-                    </label>
+                    </div>
                 </fieldset>
 
                 <fieldset>
@@ -641,6 +786,20 @@
             const next = current === 'dark' ? 'light' : 'dark';
             localStorage.setItem(STORAGE_KEYS.theme, next);
             applyTheme(next);
+        }
+
+        /* ---------- Блок "Как это работает" ---------- */
+        function toggleHelp () {
+            const box = document.getElementById('helpBox');
+            const btn = document.getElementById('helpToggle');
+            const isHidden = box.hasAttribute('hidden');
+            if (isHidden) {
+                box.removeAttribute('hidden');
+                btn.setAttribute('aria-expanded', 'true');
+            } else {
+                box.setAttribute('hidden', '');
+                btn.setAttribute('aria-expanded', 'false');
+            }
         }
 
         /* ---------- Валидация реквизитов ---------- */
